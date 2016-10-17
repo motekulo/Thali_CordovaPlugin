@@ -56,6 +56,7 @@ class Session: NSObject {
 extension Session: MCSessionDelegate {
 
     func session(session: MCSession, peer peerID: MCPeerID, didChangeState state: MCSessionState) {
+        print("assert")
         assert(identifier.displayName == peerID.displayName)
 
         sessionState.modify {
@@ -65,10 +66,13 @@ extension Session: MCSessionDelegate {
 
             switch state {
             case .NotConnected:
+                print("NotConnected \(peerID.displayName)")
                 self.didNotConnectHandler()
             case .Connected:
+                print("Connected \(peerID.displayName)")
                 self.didConnectHandler()
             case .Connecting:
+                print("Connecting \(peerID.displayName)")
                 break
             }
         }

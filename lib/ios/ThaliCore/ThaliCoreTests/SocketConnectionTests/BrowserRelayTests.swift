@@ -23,7 +23,7 @@ class BrowserRelayTests: XCTestCase {
     let anyAvailalbePort: UInt16 = 0
 
     let browserFindPeerTimeout: NSTimeInterval = 5.0
-    let browserConnectTimeout: NSTimeInterval = 5.0
+    let browserConnectTimeout: NSTimeInterval = 10.0
     let streamReceivedTimeout: NSTimeInterval = 5.0
     let clientConnectTimeout: NSTimeInterval = 5.0
     let clientDisconnectTimeout: NSTimeInterval = 5.0
@@ -179,7 +179,7 @@ class BrowserRelayTests: XCTestCase {
         // Start listening on fake node server (Advertiser's side)
         let advertiserNodeMock = TCPServerMock(didAcceptConnection: { },
                                                didReadData: { _ in},
-                                               didDisconnect: unexpectedDisconnectHandler)
+                                               didDisconnect: unexpectedSocketDisconnectHandler)
         var advertiserNodeListenerPort: UInt16 = 0
         do {
             advertiserNodeListenerPort = try advertiserNodeMock.startListening(on: anyAvailalbePort)
@@ -201,6 +201,7 @@ class BrowserRelayTests: XCTestCase {
                                                     XCTFail("Browser didn't find Advertiser peer")
                                                     return
                                                 }
+                                                print("PEER: \(peer.peerIdentifier) is \(peer.available)")
                                                 XCTAssertTrue(peer.available)
                                                 MPCFBrowserFoundAdvertiser?.fulfill()
                                             })
@@ -242,6 +243,11 @@ class BrowserRelayTests: XCTestCase {
 
         waitForExpectationsWithTimeout(browserConnectTimeout) {
             error in
+            guard error == nil else {
+                XCTFail("Browser could not connect to peer")
+                return
+            }
+            browserManager.stopListeningForAdvertisements()
             browserManagerConnected = nil
         }
 
@@ -298,5 +304,7 @@ class BrowserRelayTests: XCTestCase {
             error in
             browserNodeClientReceivedMessage = nil
         }
+
+        advertiserManager.stopAdvertising()
     }
 }

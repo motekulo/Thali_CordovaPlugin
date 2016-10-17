@@ -50,12 +50,12 @@ public final class BrowserManager {
         }
 
         newBrowser.startListening(errorHandler)
-        self.currentBrowser = newBrowser
+        currentBrowser = newBrowser
     }
 
     public func stopListeningForAdvertisements() {
         currentBrowser?.stopListening()
-        self.currentBrowser = nil
+        currentBrowser = nil
     }
 
     public func connectToPeer(peerIdentifier: String,
@@ -145,6 +145,7 @@ public final class BrowserManager {
 
     // MARK: - Private handlers
     private func handleFound(peer: Peer) {
+        print("FOUND! \(peer.uuid) in \(self)")
         availablePeers.modify { $0.append(peer) }
 
         let updatedPeerAvailability = PeerAvailability(peer: peer, available: true)
@@ -152,6 +153,7 @@ public final class BrowserManager {
     }
 
     private func handleLost(peer: Peer) {
+        print("LOST! \(peer.uuid) in \(self)")
         availablePeers.modify {
             if let indexOfLostPeer = $0.indexOf(peer) {
                 $0.removeAtIndex(indexOfLostPeer)

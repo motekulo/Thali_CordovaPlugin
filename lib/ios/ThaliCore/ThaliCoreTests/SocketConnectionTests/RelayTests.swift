@@ -62,22 +62,22 @@ class RelayTests: XCTestCase {
         let advertiserNodeMock =
             TCPServerMock(didAcceptConnection: { },
                           didReadData: {
-                            socket, data in
+                              socket, data in
 
-                            let receivedMessage = String(data: data,
-                                encoding: NSUTF8StringEncoding)
-                            XCTAssertEqual(randomMessage,
-                                receivedMessage,
-                                "Received message is wrong")
+                              let receivedMessage = String(data: data,
+                                                           encoding: NSUTF8StringEncoding)
+                              XCTAssertEqual(randomMessage,
+                                             receivedMessage,
+                                             "Received message is wrong")
 
-                            receivedMessagesAmount.modify {
-                                $0 += 1
-                                if $0 == totalMessagesAmount {
-                                    advertisersNodeServerReceivedMessage?.fulfill()
-                                }
-                            }
-                          },
-                          didDisconnect: {})
+                              receivedMessagesAmount.modify {
+                                  $0 += 1
+                                  if $0 == totalMessagesAmount {
+                                      advertisersNodeServerReceivedMessage?.fulfill()
+                                  }
+                              }
+                            },
+                            didDisconnect: { _ in })
 
         var advertiserNodeListenerPort: UInt16 = 0
         do {
@@ -102,7 +102,7 @@ class RelayTests: XCTestCase {
                                                 }
                                                 XCTAssertTrue(peer.available)
                                                 MPCFBrowserFoundAdvertiser?.fulfill()
-        })
+                                            })
         browserManager.startListeningForAdvertisements(unexpectedErrorHandler)
 
         // Start advertising on advertiser
@@ -141,15 +141,16 @@ class RelayTests: XCTestCase {
 
         waitForExpectationsWithTimeout(browserConnectTimeout) {
             error in
+            browserManager.stopListeningForAdvertisements()
             browserManagerConnected = nil
         }
 
         // Check if relay objectes are valid
         guard
             let browserRelayInfo: (uuid: String, relay: BrowserRelay) =
-            browserManager.activeRelays.value.first,
+                browserManager.activeRelays.value.first,
             let advertiserRelayInfo: (uuid: String, relay: AdvertiserRelay) =
-            advertiserManager.activeRelays.value.first
+                advertiserManager.activeRelays.value.first
             else {
                 return
         }
@@ -185,5 +186,7 @@ class RelayTests: XCTestCase {
             error in
             advertisersNodeServerReceivedMessage = nil
         }
+
+        advertiserManager.stopAdvertising()
     }
 }

@@ -49,6 +49,7 @@ class TCPListener: NSObject {
                 try socket.acceptOnPort(port)
                 listening = true
                 didAcceptConnectionHandler = connectionAccepted
+                print("TCP PORT IS: \(socket.localPort)")
                 completion(port: socket.localPort, error: nil)
             } catch _ {
                 listening = false
