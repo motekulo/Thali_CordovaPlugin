@@ -166,7 +166,7 @@ PeerDictionary.prototype.remove = function (peer) {
   assert(typeof peer.generation === 'number',
     'peer.generation must be a number');
 
-  var entry = this.get(peer);
+  var entry = this.getPeerGenerationEntry(peer);
   if (!entry) {
     return;
   }
@@ -246,7 +246,7 @@ PeerDictionary.prototype.exists = function (peer) {
  * Returns an entry that matches with the peer. If the entry is not found
  * returns null.
  */
-PeerDictionary.prototype.get = function (peer) {
+PeerDictionary.prototype.getPeerGenerationEntry = function (peer) {
   assert(peer.peerIdentifier, 'peer.peerIdentifier must be set');
   assert(typeof peer.generation === 'number',
     'peer.generation must be a number');
@@ -254,6 +254,27 @@ PeerDictionary.prototype.get = function (peer) {
   var peerEntries = this._dictionary[peer.peerIdentifier];
   var entryObject = peerEntries ? peerEntries[peer.generation] : null;
   return entryObject ? entryObject.entry : null;
+};
+
+/**
+ * Returns an array of all entries from the dictionary which match with the
+ * peerIdentifier.
+ *
+ * @public
+ * @param {string} peerIdentifier
+ * @returns {module:thaliPeerDictionary~NotificationPeerDictionaryEntry[]}
+ */
+PeerDictionary.prototype.getPeerEntries = function (peerIdentifier) {
+  assert(peerIdentifier, 'peerIdentifier must be set');
+
+  var peerEntryObjects = this._dictionary[peerIdentifier];
+  var entries = [];
+  if (peerEntryObjects) {
+    entries = Object.keys(peerEntryObjects).map(function (k) {
+      return peerEntryObjects[k].entry;
+    });
+  }
+  return entries;
 };
 
 /**

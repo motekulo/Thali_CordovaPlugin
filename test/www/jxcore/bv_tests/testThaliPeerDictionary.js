@@ -16,6 +16,8 @@ var PEER1_2 = { peerIdentifier: 'peer1', generation: 2 };
 var PEER2_1 = { peerIdentifier: 'peer2', generation: 1 };
 var PEER2_2 = { peerIdentifier: 'peer2', generation: 2 };
 
+var PEER1_1_COPY = { peerIdentifier: 'peer1', generation: 1 };
+
 var test = tape({
   setup: function (t) {
     t.end();
@@ -32,9 +34,9 @@ var test = tape({
  * @param {string} peer.peerIdentifier
  * @param {number} peer.generation
  * @param {module:thaliPeerDictionary.peerState} state
+ * @returns {module:thaliPeerDictionary~NotificationPeerDictionaryEntry}
  */
 function createEntry(peer, state) {
-
   var tagName = peer.peerIdentifier + ':' + peer.generation;
 
   var myPublicKey = crypto.createECDH(thaliConfig.BEACON_CURVE);
@@ -90,6 +92,7 @@ function addEntries(dictionary, baseString, generation, state, count) {
  * @param {string} peer.peerIdentifier
  * @param {number} peer.generation
  * @param {module:thaliPeerDictionary~NotificationPeerDictionaryEntry} entry
+ * @returns {boolean}
  */
 function testMatch(peer, entry) {
   var tagName = peer.peerIdentifier + ':' + peer.generation;
@@ -113,9 +116,9 @@ function testMatch(peer, entry) {
  * @param {number} generation
  * @param {number} start counter start
  * @param {number} end counter end
+ * @returns {boolean}
  */
 function verifyEntries(dictionary, baseString, generation, start, end) {
-
   for (var i = start; i <= end; i++) {
     var peer = {
       peerIdentifier: baseString + i,
@@ -124,56 +127,73 @@ function verifyEntries(dictionary, baseString, generation, start, end) {
     if (!dictionary.exists(peer)) {
       return false;
     }
-    if (!testMatch(peer, dictionary.get(peer))) {
+    if (!testMatch(peer, dictionary.getPeerGenerationEntry(peer))) {
       return false;
     }
   }
   return true;
 }
 
+// TODO: split test on multiple smaller tests
 test('Test PeerDictionary basic functionality', function (t) {
   var dictionary = new PeerDictionary.PeerDictionary();
 
-  var entry1_1 = createEntry(PEER1_1, PeerDictionary.peerState.RESOLVED);
-  var entry1_2 = createEntry(PEER1_2, PeerDictionary.peerState.RESOLVED);
-  var entry2_1 = createEntry(PEER2_1, PeerDictionary.peerState.RESOLVED);
-  var entry2_2 = createEntry(PEER2_2, PeerDictionary.peerState.RESOLVED);
+  var entry11 = createEntry(PEER1_1, PeerDictionary.peerState.RESOLVED);
+  var entry12 = createEntry(PEER1_2, PeerDictionary.peerState.RESOLVED);
+  var entry21 = createEntry(PEER2_1, PeerDictionary.peerState.RESOLVED);
+  var entry22 = createEntry(PEER2_2, PeerDictionary.peerState.RESOLVED);
 
-  dictionary.addUpdateEntry(PEER1_1, entry1_1);
+  dictionary.addUpdateEntry(PEER1_1, entry11);
   t.equal(dictionary._entryCounter, 1, 'Entry counter must be 1');
   t.equal(dictionary.exists(PEER1_1), true, 'Entry exists');
   t.equal(dictionary.size(), 1, 'Size must be 1');
 
-  dictionary.addUpdateEntry(PEER2_1, entry2_1);
+  dictionary.addUpdateEntry(PEER2_1, entry21);
   t.equal(dictionary._entryCounter, 2, 'Entry counter must be 2');
   t.equal(dictionary.exists(PEER2_1), true, 'Entry exists');
   t.equal(dictionary.size(), 2, 'Size must be 2');
 
-  dictionary.addUpdateEntry(PEER1_2, entry1_2);
+  dictionary.addUpdateEntry(PEER1_2, entry12);
   t.equal(dictionary._entryCounter, 3, 'Entry counter must be 1');
   t.equal(dictionary.exists(PEER1_2), true, 'Entry exists');
   t.equal(dictionary.size(), 3, 'Size must be 3');
 
-  dictionary.addUpdateEntry(PEER2_2, entry2_2);
+  dictionary.addUpdateEntry(PEER2_2, entry22);
   t.equal(dictionary._entryCounter, 4, 'Entry counter must be 2');
   t.equal(dictionary.exists(PEER2_2), true, 'Entry exists');
   t.equal(dictionary.size(), 4, 'Size must be 4');
 
+
+  t.equal(dictionary.getPeerGenerationEntry(PEER1_1), entry11,
+    'getPeerGenerationEntry returns correct entry');
+  t.equal(dictionary.getPeerGenerationEntry(PEER1_1_COPY), entry11,
+    'getPeerGenerationEntry returns correct entry');
+
+  var peerEntries = dictionary.getPeerEntries(PEER1_1.peerIdentifier);
+  t.equal(peerEntries.length, 2, 'dictionary contains 2 entries for a peer');
+  t.ok(peerEntries.indexOf(entry11) !== -1, 'contains entry11');
+  t.ok(peerEntries.indexOf(entry12) !== -1, 'contains entry12');
+
   dictionary.remove(PEER1_1);
-  t.equal(dictionary.get(PEER1_1), null, 'Entry 1_1 should not be found');
+  t.equal(dictionary.getPeerGenerationEntry(PEER1_1), null,
+    'Entry 1_1 should not be found');
   t.equal(dictionary.exists(PEER1_1), false, 'Entry 1_1 does not exist');
   t.equal(dictionary.size(), 3, 'Size must be 3');
 
   dictionary.remove(PEER1_2);
-  t.equal(dictionary.get(PEER1_2), null, 'Entry 1_2 should not be found');
+  t.equal(dictionary.getPeerGenerationEntry(PEER1_2), null,
+    'Entry 1_2 should not be found');
   t.equal(dictionary.exists(PEER1_2), false, 'Entry 1_2 does not exist');
   t.equal(dictionary.size(), 2, 'Size must be 2');
 
   t.equal(PEER2_1.peerIdentifier, PEER2_2.peerIdentifier);
   dictionary.removeAllPeerEntries(PEER2_1.peerIdentifier);
-  t.equal(dictionary.get(PEER2_1), null, 'Entry 2_1 should not be found');
-  t.equal(dictionary.get(PEER2_2), null, 'Entry 2_2 should not be found');
-  t.equal(dictionary.exists(PEER2_1), false, 'Entry 2_1 does not exist');
+  t.equal(dictionary.getPeerGenerationEntry(PEER2_1), null,
+    'Entry 2_1 should not be found');
+  t.equal(dictionary.getPeerGenerationEntry(PEER2_2), null,
+    'Entry 2_2 should not be found');
+  t.equal(dictionary.exists(PEER2_1), false,
+    'Entry 2_1 does not exist');
   t.equal(dictionary.exists(PEER2_2), false, 'Entry 2_2 does not exist');
   t.equal(dictionary.size(), 0, 'Size must be 0');
 
@@ -211,9 +231,9 @@ test('Test PeerDictionary with multiple entries.', function (t) {
   addEntries(dictionary2, 'resolved_', 0, PeerDictionary.peerState.RESOLVED,
     PeerDictionary.PeerDictionary.MAXSIZE + 20 );
 
-  var entry = dictionary2.get(PEER1_1);
+  var entry = dictionary2.getPeerGenerationEntry(PEER1_1);
 
-  t.ok(entry != null, 'WAITING state entry should not be removed');
+  t.notEqual(entry, null, 'WAITING state entry should not be removed');
 
   t.end();
 });
@@ -257,9 +277,9 @@ test('WAITING entries are removed before CONTROLLED_BY_POOL state entry.',
     addEntries(dictionary, 'waiting_', 0, PeerDictionary.peerState.WAITING,
       PeerDictionary.PeerDictionary.MAXSIZE + 5 );
 
-    var entry = dictionary.get(PEER1_1);
+    var entry = dictionary.getPeerGenerationEntry(PEER1_1);
 
-    t.ok(entry != null, 'WAITING state entry should not be removed');
+    t.notEqual(entry, null, 'WAITING state entry should not be removed');
 
     // Ensures that expected waiting entries remained.
     var entriesExist = verifyEntries(dictionary, 'waiting_', 0,

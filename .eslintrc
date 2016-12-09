@@ -58,7 +58,6 @@
       2,
       {
         "ignoreTrailingComments": true,
-        "ignoreStrings": true,
         "ignoreUrls": true,
         "ignorePattern": "^ \\* @param \\{.*?\\} [\\w\\d_\\.]+$" // ignore long jsdoc params
       }
