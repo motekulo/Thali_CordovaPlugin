@@ -42,9 +42,9 @@ module.exports.peerState = {
  * @classdesc An entry to be put into the peerDictionary.
  *
  * @public
- * @param {module:thaliPeerDictionary.peerState} peerState The
- * state of the peer.
- * @param {module:thaliNotificationAction~NotificationAction} notificationAction
+ * @param {module:thaliPeerDictionary.peerState} peerState The state of the
+ * peer.
+ * @param {module:thaliNotificationAction~ThaliNotificationAction} notificationAction
  * @constructor
  */
 function NotificationPeerDictionaryEntry(peerState, notificationAction) {
@@ -114,7 +114,7 @@ function PeerDictionary() {
 PeerDictionary.MAXSIZE = 100;
 
 /**
- * Adds the entry if the peerId isn't yet in the table otherwise updates the
+ * Adds the entry if the peer isn't yet in the table otherwise updates the
  * existing entry. If the new entry will increase the size of the dictionary
  * beyond the fixed maximum then the oldest resolved entry is removed.
  * If there are no remaining resolved entries to remove then the oldest
@@ -154,12 +154,7 @@ PeerDictionary.prototype.addUpdateEntry =
   };
 
 /**
- * Removes an entry which matches with the peerId.
- *
- * Errors:
- *
- * 'entry not found' - can't remove an entry because it is not
- * found.
+ * Removes an entry which matches with the peer.
  *
  * @public
  * @param {Object} peer
@@ -188,6 +183,12 @@ PeerDictionary.prototype.remove = function (peer) {
   }
 };
 
+/**
+ * Removes all entries which match with the peerIdentifier.
+ *
+ * @public
+ * @param {string} peerIdentifier
+ */
 PeerDictionary.prototype.removeAllPeerEntries = function (peerIdentifier) {
   var peerEntries = this._dictionary[peerIdentifier];
   if (!peerEntries) {
@@ -203,6 +204,7 @@ PeerDictionary.prototype.removeAllPeerEntries = function (peerIdentifier) {
 
 /**
  * Removes all entries from the dictionary.
+ *
  * @public
  */
 PeerDictionary.prototype.removeAll = function () {
@@ -234,14 +236,14 @@ PeerDictionary.prototype.exists = function (peer) {
 };
 
 /**
- * Returns an entry from the dictionary which matches with the peerId.
+ * Returns an entry from the dictionary which matches with the peer.
  *
  * @public
  * @param {Object} peer
  * @param {string} peer.peerIdentifier
  * @param {number} peer.generation
  * @returns {module:thaliPeerDictionary~NotificationPeerDictionaryEntry}
- * Returns an entry that matches with the peerId. If the entry is not found
+ * Returns an entry that matches with the peer. If the entry is not found
  * returns null.
  */
 PeerDictionary.prototype.get = function (peer) {
@@ -267,6 +269,12 @@ PeerDictionary.prototype.size = function () {
   }, 0);
 };
 
+/**
+ * Returns an array of all entries in the dictionary.
+ *
+ * @private
+ * @returns {module:thaliPeerDictionary~NotificationPeerDictionaryEntry[]}
+ */
 PeerDictionary.prototype._values = function () {
   var dict = this._dictionary;
   return Object.keys(dict).reduce(function (result, peerIdentifier) {
