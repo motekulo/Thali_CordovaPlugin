@@ -140,7 +140,7 @@ extension Advertiser: MCNearbyServiceAdvertiserDelegate {
   func advertiser(advertiser: MCNearbyServiceAdvertiser,
                   didReceiveInvitationFromPeer peerID: MCPeerID,
                   withContext context: NSData?,
-                  invitationHandler: (Bool, MCSession) -> Void) {
+                  invitationHandler: (Bool, MCSession?) -> Void) {
 
     let mcSession = MCSession(peer: advertiser.myPeerID,
                               securityIdentity: nil,
