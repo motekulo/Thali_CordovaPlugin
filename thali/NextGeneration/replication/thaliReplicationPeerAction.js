@@ -200,6 +200,15 @@ ThaliReplicationPeerAction.prototype.start = function (httpAgentPool) {
   var self = this;
   this._completed = false;
 
+  var lid = Math.random() * 1e5 | 0;
+  self._lid = lid;
+  var log = function () {
+    var args = Array.prototype.slice.call(arguments);
+    args.unshift('~~#' + lid);
+    args.unshift();
+    console.log.apply(console, args);
+  };
+
   return ThaliReplicationPeerAction.super_.prototype.start
     .call(this, httpAgentPool)
     .then(function () {
@@ -225,15 +234,18 @@ ThaliReplicationPeerAction.prototype.start = function (httpAgentPool) {
           live: true
         })
         .on('paused', function (err) {
+          log('paused', err);
           logger.debug(
             'Got paused with - ',
             Utils.serializePouchError(err)
           );
         })
         .on('active', function () {
+          log('active');
           logger.debug('Replication resumed');
         })
         .on('denied', function (err) {
+          log('denied', err);
           logger.warn(
             'We got denied on a PouchDB access, this really should ' +
             'not happen - ',
@@ -241,9 +253,11 @@ ThaliReplicationPeerAction.prototype.start = function (httpAgentPool) {
           );
         })
         .on('complete', function (info) {
+          log('complete', info);
           self._complete(info.errors);
         })
         .on('error', function (err) {
+          log('error', err);
           logger.debug(
             'Got error on replication - ',
             Utils.serializePouchError(err)
@@ -251,6 +265,7 @@ ThaliReplicationPeerAction.prototype.start = function (httpAgentPool) {
           self._complete([err]);
         })
         .on('change', function (info) {
+          log('change', info);
           self._replicationTimer();
           // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
           self._localSeqManager
@@ -269,7 +284,12 @@ ThaliReplicationPeerAction.prototype.start = function (httpAgentPool) {
               }
             });
           // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+        })
+        .on('cancel', function () {
+          log('cancelled');
+          self._complete();
         });
+        self._cancelReplication._lid = lid;
       });
       return self._replicationPromise;
     });
@@ -284,16 +304,20 @@ ThaliReplicationPeerAction.prototype.kill = function () {
   if (this.getActionState() === actionState.KILLED) {
     return null;
   }
+  console.log('KILLING ACTION (' + this._lid + ')');
   ThaliReplicationPeerAction.super_.prototype.kill.call(this);
 
   if (this._refreshTimerManager) {
+    console.log('ACTION (' + this._lid + ')', 'stopping timer');
     this._refreshTimerManager.stop();
     this._refreshTimerManager = null;
   }
   if (this._cancelReplication) {
+    console.log('ACTION (' + this._lid + ')', 'cancelling replication (' + this._cancelReplication._lid + ')');
     this._cancelReplication.cancel();
   }
   if (this._localSeqManager) {
+    console.log('ACTION (' + this._lid + ')', 'stopping seq manager');
     this._localSeqManager.stop();
   }
 
@@ -302,9 +326,11 @@ ThaliReplicationPeerAction.prototype.kill = function () {
 
 function printErrorArray(errors) {
   var result = '';
-  errors.forEach(function (error) {
-    result += 'error: ' + error.message + ' ';
-  });
+  if (errors) {
+    errors.forEach(function (error) {
+      result += 'error: ' + error.message + ' ';
+    });
+  }
   return result;
 }
 
@@ -379,13 +405,18 @@ ThaliReplicationPeerAction.prototype.waitUntilKilled = function () {
 
   var promises = [];
   if (this._replicationPromise) {
-    promises.push(
-      this._replicationPromise.catch(function () {})
-    );
+    var id = this._lid;
+    console.log('~~#' + id + ' >>>>>>>>>> WAITING REPLICATION');
+    var p = this._replicationPromise.catch(function () {});
+    promises.push(p);
+    p.then(function () {
+      console.log ('~~#' + id + ' >>>>>>>>>> replication resolved');
+    });
   }
   if (this._localSeqManager) {
     promises.push(this._localSeqManager.waitUntilStopped());
   }
+
   return Promise.all(promises);
 };
 

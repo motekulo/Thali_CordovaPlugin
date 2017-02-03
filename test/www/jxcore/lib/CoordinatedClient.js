@@ -500,6 +500,8 @@ CoordinatedClient.prototype._sync = function (tape, test, timeout) {
   }
   var callerId = getCaller(2);
 
+  logger.info('#sync');
+
   return self._emit('sync', callerId, test.options)
     .then(function () {
       return self._runEvent('syncFinished', test);

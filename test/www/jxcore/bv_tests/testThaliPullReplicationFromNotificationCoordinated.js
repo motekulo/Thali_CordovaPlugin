@@ -127,19 +127,23 @@ test('Coordinated pull replication from notification test', function (t) {
   })
 
   .then(function () {
+    console.log('First Sync');
     return t.sync();
   })
 
   .then(function () {
+    console.log('First Sync Done');
     thaliPullReplicationFromNotification.stop();
     return thaliPeerPoolDefault.stop();
   })
   .then(function () {
     // https://github.com/thaliproject/Thali_CordovaPlugin/issues/1138
     // workaround for ECONNREFUSED and ECONNRESET from 'request.js' in 'pouchdb'.
+    console.log('Second Sync');
     return t.sync();
   })
   .then(function () {
+    console.log('Second Sync Done');
     return thaliNotificationServer.stop();
   })
   .then(function () {

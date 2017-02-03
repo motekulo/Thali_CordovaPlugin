@@ -53,7 +53,7 @@ function LocalSeqManager(maximumUpdateInterval,
  * returns an Error object
  * @private
  */
-LocalSeqManager.prototype._doImmediateSeqUpdate = function (seq) {
+LocalSeqManager.prototype._doImmediateSeqUpdate = function (seq, r) {
   var self = this;
 
   if (this._stopCalled) {
@@ -78,11 +78,13 @@ LocalSeqManager.prototype._doImmediateSeqUpdate = function (seq) {
       });
   }
 
+  console.trace(r);
   return getLocalIdRevOrNull()
     .then(function (rev) {
       if (self._stopCalled) {
         var error = new Error('Stop Called');
         error.onPut = true; // Helps testing
+        console.log(error.message, error.stack);
         return Promise.reject(error);
       }
       return self._remotePouchDB.put({
@@ -96,7 +98,7 @@ LocalSeqManager.prototype._doImmediateSeqUpdate = function (seq) {
       return self._seqDocRev;
     })
     .catch(function (err) {
-      logger.debug('Got an error trying to update seq ' + JSON.stringify(err));
+      logger.debug(r + ' Got an error trying to update seq ' + JSON.stringify(err));
       return Promise.reject(err);
     });
 };
@@ -134,6 +136,7 @@ LocalSeqManager.prototype.update = function (seq, immediate) {
   }
 
   function runUpdate() {
+    var r = Math.random();
     self._blockedUpdateRequest = new Promise(function (resolve, reject) {
       return self._currentUpdateRequest
         .catch(function () {
@@ -144,7 +147,7 @@ LocalSeqManager.prototype.update = function (seq, immediate) {
         .then(function () {
           self._blockedUpdateRequest = null;
           self._currentUpdateRequest =
-            self._doImmediateSeqUpdate(self._nextSeqValueToSend);
+            self._doImmediateSeqUpdate(self._nextSeqValueToSend, r);
           return self._currentUpdateRequest;
         })
         .then(function (result) {

@@ -258,6 +258,6 @@ PeerAction.prototype.kill = function () {
 
 PeerAction.prototype.waitUntilKilled = function () {
   return Promise.resolve();
-}
+};
 
 module.exports = PeerAction;
